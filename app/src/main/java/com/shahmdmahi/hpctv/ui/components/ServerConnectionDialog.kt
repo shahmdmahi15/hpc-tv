@@ -179,7 +179,8 @@ fun ManualIpDialog(
     initialIp: String,
     onConnect: (ip: String, port: Int, ssl: Boolean) -> Unit,
     onDismiss: () -> Unit,
-    onTestVoice: (() -> Unit)? = null
+    onTestVoice: (() -> Unit)? = null,
+    onRescan: (() -> Unit)? = null
 ) {
     var ipInput by remember { mutableStateOf(initialIp.ifBlank { "192.168.2.2" }) }
     var portInput by remember { mutableStateOf("3000") }
@@ -335,6 +336,28 @@ fun ManualIpDialog(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.5.sp
                 )
+            }
+
+            if (onRescan != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(HpcTvBackground)
+                        .border(1.dp, HpcBorderZinc700, RoundedCornerShape(10.dp))
+                        .clickable { onRescan() }
+                        .focusable()
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "সার্ভার অটো-অনুসন্ধান / AUTO-RESCAN NETWORK",
+                        color = HpcTextWhite,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
 
             if (onTestVoice != null) {

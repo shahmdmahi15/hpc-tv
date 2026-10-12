@@ -189,7 +189,11 @@ fun WaitingRoomScreen(viewModel: WaitingRoomViewModel) {
                     viewModel.connectManually(ip, port, ssl)
                 },
                 onDismiss = { viewModel.closeManualIpDialog() },
-                onTestVoice = { viewModel.testAnnouncementSound() }
+                onTestVoice = { viewModel.testAnnouncementSound() },
+                onRescan = {
+                    viewModel.closeManualIpDialog()
+                    viewModel.startAutoDiscovery()
+                }
             )
         }
     }

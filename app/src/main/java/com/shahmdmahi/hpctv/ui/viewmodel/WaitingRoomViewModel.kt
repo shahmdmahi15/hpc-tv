@@ -195,33 +195,36 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
         }
 
         viewModelScope.launch {
-            sseManager.queueRefreshTriggerFlow.collect {
-                fetchLatestSnapshot()
+            var reconnectingSeconds = 0
+            sseManager.connectionState.collect { connState ->
+                if (connState == WaitingRoomSseManager.ConnectionState.RECONNECTING) {
+                    reconnectingSeconds += 5
+                    if (reconnectingSeconds >= 30) {
+                        reconnectingSeconds = 0
+                        // Server likely rotated DHCP IP address: trigger dynamic re-discovery
+                        startAutoDiscovery()
+                    }
+                } else {
+                    reconnectingSeconds = 0
+                }
             }
         }
     }
 
     fun startAutoDiscovery() {
         viewModelScope.launch {
-            _viewState.value = ViewState.Discovering("Searching for clinic server via UDP on port 8888...")
+            _viewState.value = ViewState.Discovering("Locating clinic server on local Wi-Fi...")
 
-            val discovered = discoveryManager.discoverServer(timeoutMs = 4000)
+            val discovered = discoveryManager.autoDiscoverServer { statusMsg ->
+                _viewState.value = ViewState.Discovering(statusMsg)
+            }
+
             if (discovered != null) {
                 connectToServer(discovered)
             } else {
-                // Check saved server
                 val saved = discoveryManager.getSavedServer()
-                if (saved != null) {
-                    _viewState.value = ViewState.Discovering("Attempting connection to saved server ${saved.ip}...")
-                    val verifyResult = apiService.verifyDiscovery(saved.baseUrl)
-                    if (verifyResult.isSuccess) {
-                        connectToServer(saved)
-                        return@launch
-                    }
-                }
-
                 _viewState.value = ViewState.Offline(
-                    reason = "Could not automatically discover clinic server. Verify Wi-Fi network.",
+                    reason = "Could not locate clinic server on local network. Ensure TV and Server share Wi-Fi.",
                     lastServer = saved
                 )
             }
