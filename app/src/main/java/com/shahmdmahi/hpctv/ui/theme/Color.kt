@@ -37,3 +37,9 @@ val HpcRedDark = Color(0xFF450A0A)
 val HpcBlue400 = Color(0xFF38BDF8)
 val HpcBlue500 = Color(0xFF0EA5E9)
 val HpcBlueDark = Color(0xFF082F49)
+
+val HpcPink400 = Color(0xFFF472B6)
+val HpcPinkDark = Color(0xFF500724)
+
+val HpcPurple400 = Color(0xFFC084FC)
+val HpcPurpleDark = Color(0xFF3B0764)

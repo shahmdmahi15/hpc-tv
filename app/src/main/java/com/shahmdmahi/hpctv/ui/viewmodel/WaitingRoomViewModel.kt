@@ -109,11 +109,9 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
 
     private fun decrementTherapyTimers() {
         val currentSnap = _snapshot.value
-        val therapyRooms = currentSnap.therapyQueue.rooms
-        if (therapyRooms.isEmpty()) return
-
         var hasChanges = false
-        val updatedRooms = therapyRooms.map { room ->
+
+        val updatedRooms = currentSnap.therapyQueue.rooms.map { room ->
             val timer = room.timer
             if (timer != null && timer.isRunning && timer.remainingSeconds > 0) {
                 hasChanges = true
@@ -128,18 +126,52 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
             }
         }
 
+        val updatedTherapyItems = currentSnap.therapyItems.map { item ->
+            val timer = item.timer
+            if (timer != null && timer.isRunning && timer.remainingSeconds > 0) {
+                hasChanges = true
+                item.copy(
+                    timer = timer.copy(
+                        remainingSeconds = timer.remainingSeconds - 1,
+                        isAllCompleted = (timer.remainingSeconds - 1) <= 0
+                    )
+                )
+            } else {
+                item
+            }
+        }
+
         if (hasChanges) {
             _snapshot.value = currentSnap.copy(
-                therapyQueue = currentSnap.therapyQueue.copy(rooms = updatedRooms)
+                therapyQueue = currentSnap.therapyQueue.copy(rooms = updatedRooms),
+                therapyItems = updatedTherapyItems
             )
         }
+    }
+
+    private fun normalizeSnapshot(snap: WaitingRoomSnapshot): WaitingRoomSnapshot {
+        val consultationItems = if (snap.consultationItems.isNotEmpty()) {
+            snap.consultationItems
+        } else {
+            snap.consultationQueue.items
+        }
+        val therapyItems = if (snap.therapyItems.isNotEmpty()) {
+            snap.therapyItems
+        } else {
+            snap.therapyQueue.items
+        }
+        return snap.copy(
+            consultationItems = consultationItems,
+            therapyItems = therapyItems
+        )
     }
 
     private fun observeSseEvents() {
         viewModelScope.launch {
             sseManager.initialStateFlow.collect { initialSnapshot ->
-                _snapshot.value = initialSnapshot
-                _viewState.value = ViewState.Ready(initialSnapshot)
+                val normalized = normalizeSnapshot(initialSnapshot)
+                _snapshot.value = normalized
+                _viewState.value = ViewState.Ready(normalized)
             }
         }
 
@@ -203,7 +235,7 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             val result = apiService.fetchSnapshot(server.baseUrl)
             if (result.isSuccess) {
-                val snap = result.getOrThrow()
+                val snap = normalizeSnapshot(result.getOrThrow())
                 _snapshot.value = snap
                 _viewState.value = ViewState.Ready(snap)
                 discoveryManager.saveServer(server)
@@ -256,7 +288,7 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
         viewModelScope.launch {
             val result = apiService.fetchSnapshot(server.baseUrl)
             if (result.isSuccess) {
-                val snap = result.getOrThrow()
+                val snap = normalizeSnapshot(result.getOrThrow())
                 _snapshot.value = snap
                 if (_viewState.value !is ViewState.Ready) {
                     _viewState.value = ViewState.Ready(snap)

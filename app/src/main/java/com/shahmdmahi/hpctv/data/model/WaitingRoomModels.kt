@@ -8,6 +8,9 @@ data class WaitingRoomSnapshot(
     val activeCalls: List<CallAnnouncement> = emptyList(),
     val consultationQueue: ConsultationQueueData = ConsultationQueueData(),
     val therapyQueue: TherapyQueueData = TherapyQueueData(),
+    val consultationItems: List<TvQueueItem> = emptyList(),
+    val therapyItems: List<TvQueueItem> = emptyList(),
+    val queueItems: List<TvQueueItem> = emptyList(),
     val bulletinNotices: List<BulletinNoticeItem> = emptyList(),
     val telemetry: TelemetryInfo = TelemetryInfo()
 )
@@ -45,7 +48,8 @@ data class ConsultationQueueData(
     val doctors: List<DoctorChamberQueue> = emptyList(),
     val currentlyServing: List<CurrentlyServingPatient> = emptyList(),
     val waitingQueue: List<WaitingQueuePatient> = emptyList(),
-    val totalWaiting: Int = 0
+    val totalWaiting: Int = 0,
+    val items: List<TvQueueItem> = emptyList()
 )
 
 @Serializable
@@ -101,7 +105,8 @@ data class TherapyQueueData(
     val activeTherapyCount: Int = 0,
     val waitingTherapyCount: Int = 0,
     val estimatedWaitMinutes: Int = 0,
-    val waitingQueue: List<WaitingSerialItem> = emptyList()
+    val waitingQueue: List<WaitingSerialItem> = emptyList(),
+    val items: List<TvQueueItem> = emptyList()
 )
 
 @Serializable
@@ -130,6 +135,24 @@ data class TherapyTimerInfo(
     val totalSeconds: Int = 0,
     val modalityName: String = "",
     val isAllCompleted: Boolean = false
+)
+
+@Serializable
+data class TvQueueItem(
+    val id: String = "",
+    val serialNumber: Int? = null,
+    val patientName: String = "",
+    val patientMrn: String? = null,
+    val gender: String? = null,
+    val doctorName: String? = null,
+    val roomNumber: String = "",
+    val roomPurpose: String = "",
+    val queueType: String = "CONSULTATION", // CONSULTATION, THERAPY
+    val status: String = "CHECKED_IN", // CHECKED_IN, CALLING, IN_CONSULTATION, IN_THERAPY
+    val toldTime: String? = null,
+    val checkInTime: String? = null,
+    val bookingType: String? = null,
+    val timer: TherapyTimerInfo? = null
 )
 
 @Serializable

@@ -139,7 +139,8 @@ fun WaitingRoomScreen(viewModel: WaitingRoomViewModel) {
                         onOpenSettings = { viewModel.openManualIpDialog() }
                     )
 
-                    // 3. Main Split-Screen Workspace (Consultation Chambers on Left, Therapy Rooms on Right)
+                    // 3. Main Split-Screen Workspace (Physical Therapy on Left, Doctor Consultation on Right)
+                    // Perfectly symmetric 50/50 dual-column layout 100% matched to Web Waiting Room Live View
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -147,15 +148,18 @@ fun WaitingRoomScreen(viewModel: WaitingRoomViewModel) {
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        // Left Column: Doctor Consultation Queue
-                        DoctorChambersSection(
-                            consultationQueue = snapshot.consultationQueue,
-                            modifier = Modifier.weight(1.15f)
+                        // Column 1 (Left): Physical Therapy Rooms & Queue
+                        TherapyRoomsSection(
+                            therapyItems = snapshot.therapyItems.ifEmpty { snapshot.therapyQueue.items },
+                            activeCount = snapshot.therapyQueue.activeTherapyCount,
+                            waitingCount = snapshot.therapyQueue.waitingTherapyCount,
+                            modifier = Modifier.weight(1f)
                         )
 
-                        // Right Column: Physical Therapy Rooms
-                        TherapyRoomsSection(
-                            therapyQueue = snapshot.therapyQueue,
+                        // Column 2 (Right): Doctor Consultation Queue
+                        DoctorChambersSection(
+                            consultationItems = snapshot.consultationItems.ifEmpty { snapshot.consultationQueue.items },
+                            totalWaiting = snapshot.consultationQueue.totalWaiting,
                             modifier = Modifier.weight(1f)
                         )
                     }
