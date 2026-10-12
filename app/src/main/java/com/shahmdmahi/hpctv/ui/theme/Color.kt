@@ -7,6 +7,7 @@ val HpcEmerald500 = Color(0xFF10B981)
 val HpcEmerald600 = Color(0xFF059669)
 val HpcEmerald700 = Color(0xFF047857)
 val HpcEmerald400 = Color(0xFF34D399)
+val HpcEmerald300 = Color(0xFF6EE7B7)
 val HpcEmeraldDark = Color(0xFF064E3B)
 val HpcEmeraldGlow = Color(0x3310B981)
 

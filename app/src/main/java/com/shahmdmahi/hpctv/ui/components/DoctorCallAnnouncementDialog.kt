@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Campaign
@@ -17,8 +16,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,13 @@ import androidx.tv.material3.*
 import com.shahmdmahi.hpctv.data.model.CallAnnouncement
 import com.shahmdmahi.hpctv.ui.theme.*
 
+/**
+ * Large-Format Fullscreen Doctor/Therapy Call Announcement Modal.
+ * Designed specifically for high-distance visibility on large TV screens (43"-75"+).
+ *
+ * Patient Name: 38sp ExtraBold
+ * Room Number Callout: 56sp Font-Black inside high-contrast illuminated gradient banner.
+ */
 @OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun DoctorCallAnnouncementDialog(
@@ -36,19 +44,35 @@ fun DoctorCallAnnouncementDialog(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "callingPulse")
     val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.96f,
-        targetValue = 1.04f,
+        initialValue = 0.98f,
+        targetValue = 1.02f,
         animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
+            animation = tween(900, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "pulseScale"
     )
 
+    val cleanRoom = announcement.roomNumber.ifBlank { "101" }
+    val isTherapy = announcement.station.contains("THERAPY", ignoreCase = true) ||
+                    announcement.roomPurpose.contains("Therapy", ignoreCase = true)
+
+    val purposeTitleBn = if (isTherapy) {
+        "ফিজিওথেরাপি সেশন • রুমে প্রবেশ করুন"
+    } else {
+        "ডাক্তার কনসাল্টেশন • চেম্বারে প্রবেশ করুন"
+    }
+
+    val purposeSubtitleEn = if (isTherapy) {
+        "PHYSICAL THERAPY • PLEASE PROCEED TO ROOM $cleanRoom"
+    } else {
+        "DOCTOR CONSULTATION • PLEASE PROCEED TO ROOM $cleanRoom"
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.82f))
+            .background(Color.Black.copy(alpha = 0.88f))
             .clickable { onDismiss() },
         contentAlignment = Alignment.Center
     ) {
@@ -58,21 +82,21 @@ fun DoctorCallAnnouncementDialog(
                     scaleX = pulseScale
                     scaleY = pulseScale
                 }
-                .width(620.dp)
-                .clip(RoundedCornerShape(24.dp))
+                .width(760.dp)
+                .clip(RoundedCornerShape(28.dp))
                 .background(HpcCardBackground)
-                .border(2.5.dp, HpcEmerald500, RoundedCornerShape(24.dp))
-                .padding(28.dp),
+                .border(3.dp, HpcEmerald500, RoundedCornerShape(28.dp))
+                .padding(32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top Badge
+            // 1. Top Calling Pill
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .background(HpcEmeraldGlow, RoundedCornerShape(20.dp))
-                    .border(1.dp, HpcEmerald500, RoundedCornerShape(20.dp))
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .border(1.5.dp, HpcEmerald400, RoundedCornerShape(20.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Campaign,
@@ -81,7 +105,7 @@ fun DoctorCallAnnouncementDialog(
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "সিরিয়াল ডাকা হয়েছে • PATIENT CALL",
+                    text = "রোগীকে ডাকা হচ্ছে • NOW CALLING PATIENT",
                     color = HpcEmerald400,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Black,
@@ -91,87 +115,156 @@ fun DoctorCallAnnouncementDialog(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Token Number in massive typography
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(HpcEmerald500)
-                    .padding(horizontal = 28.dp, vertical = 10.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                val tokenText = if (announcement.serialNumber != null) {
-                    "টোকেন ${announcement.serialNumber} • TOKEN ${announcement.serialNumber}"
-                } else {
-                    "সিরিয়াল ডাকা হয়েছে"
+            // 2. Token Serial Number Badge
+            if (announcement.serialNumber != null) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(HpcEmeraldGlow)
+                        .border(1.5.dp, HpcEmerald500.copy(alpha = 0.7f), RoundedCornerShape(14.dp))
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "টোকেন #${formatNumberBn(announcement.serialNumber)} • TOKEN #${announcement.serialNumber}",
+                        color = HpcEmerald300,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace,
+                        letterSpacing = 1.sp
+                    )
                 }
-                Text(
-                    text = tokenText,
-                    color = HpcTextWhite,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.sp
-                )
+
+                Spacer(modifier = Modifier.height(14.dp))
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
-
-            // Patient Name
+            // 3. Patient Full Name (Large Typography)
             Text(
                 text = announcement.patientName.ifBlank { "রোগীর নাম" },
                 color = HpcTextWhite,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
+                fontSize = 38.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                lineHeight = 44.sp,
+                modifier = Modifier.padding(horizontal = 8.dp)
             )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Assigned Room
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier
-                    .background(HpcTvBackground, RoundedCornerShape(12.dp))
-                    .border(1.dp, HpcBorderZinc800, RoundedCornerShape(12.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.MeetingRoom,
-                    contentDescription = "Room",
-                    tint = HpcEmerald400,
-                    modifier = Modifier.size(22.dp)
-                )
-                Text(
-                    text = "অনুগ্রহ করে রুম ${announcement.roomNumber} এ প্রবেশ করুন",
-                    color = HpcEmerald400,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            }
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Countdown dismiss & Remote button
+            // 4. Large-Format Chamber / Room Callout Box
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF047857), // Emerald 700
+                                Color(0xFF065F46), // Emerald 800
+                                Color(0xFF064E3B)  // Emerald Dark
+                            )
+                        )
+                    )
+                    .border(2.5.dp, HpcEmerald400, RoundedCornerShape(22.dp))
+                    .padding(horizontal = 24.dp, vertical = 18.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = purposeTitleBn,
+                    color = Color(0xFFA7F3D0), // Emerald 200
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.8.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(18.dp)
+                ) {
+                    // Massive Room Icon Box
+                    Box(
+                        modifier = Modifier
+                            .size(72.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Color.White.copy(alpha = 0.22f))
+                            .border(1.5.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(18.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MeetingRoom,
+                            contentDescription = "Room",
+                            tint = Color.White,
+                            modifier = Modifier.size(46.dp)
+                        )
+                    }
+
+                    // Enormous Room Number Text
+                    Column {
+                        Text(
+                            text = "রুম নং ${formatNumberBn(cleanRoom)}",
+                            color = Color.White,
+                            fontSize = 56.sp,
+                            fontWeight = FontWeight.Black,
+                            fontFamily = FontFamily.Monospace,
+                            letterSpacing = 1.sp
+                        )
+                        Text(
+                            text = purposeSubtitleEn,
+                            color = HpcEmerald300,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = 0.8.sp
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            // 5. Visual Countdown Progress Bar
+            val progress = (countdownSeconds / 16f).coerceIn(0f, 1f)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(HpcBorderZinc800)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(HpcEmerald500)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 6. Dismiss Info & Remote Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "${countdownSeconds} সেকেন্ড পর স্বয়ংক্রিয় বন্ধ হবে",
+                    text = "${formatNumberBn(countdownSeconds)} সেকেন্ড পর স্বয়ংক্রিয় বন্ধ হবে",
                     color = HpcTextZinc400,
-                    fontSize = 12.sp
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
                 )
 
                 // Dismiss button for TV remote
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(HpcCardSurfaceElevated)
-                        .border(1.dp, HpcBorderZinc700, RoundedCornerShape(10.dp))
+                        .border(1.dp, HpcBorderZinc700, RoundedCornerShape(12.dp))
                         .clickable { onDismiss() }
                         .focusable()
-                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Row(
@@ -182,12 +275,12 @@ fun DoctorCallAnnouncementDialog(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
                             tint = HpcTextWhite,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                         Text(
                             text = "বন্ধ করুন (OK)",
                             color = HpcTextWhite,
-                            fontSize = 12.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
