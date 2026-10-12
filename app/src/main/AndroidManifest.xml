@@ -21,6 +21,14 @@
         android:name="android.hardware.wifi"
         android:required="false" />
 
+    <!-- Package Visibility for Android 11+ (API 30+) TextToSpeech engine discovery -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <package android:name="com.google.android.tts" />
+    </queries>
+
     <application
         android:name=".HpcTvApp"
         android:allowBackup="true"

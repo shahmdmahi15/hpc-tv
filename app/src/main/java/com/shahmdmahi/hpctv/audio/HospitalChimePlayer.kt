@@ -33,12 +33,12 @@ object HospitalChimePlayer {
         playPcm(alertPcmBuffer)
     }
 
-    private fun playPcm(buffer: ShortArray) {
+    private suspend fun playPcm(buffer: ShortArray) {
         var track: AudioTrack? = null
         try {
             val bufferSize = buffer.size * 2
             val attributes = AudioAttributes.Builder()
-                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                 .build()
 
@@ -58,9 +58,9 @@ object HospitalChimePlayer {
             track.write(buffer, 0, buffer.size)
             track.play()
 
-            // Wait for sound to play through
+            // Wait for sound to play through non-blockingly
             val sleepMs = ((buffer.size.toDouble() / SAMPLE_RATE) * 1000).toLong() + 100
-            Thread.sleep(sleepMs)
+            kotlinx.coroutines.delay(sleepMs)
         } catch (_: Exception) {
         } finally {
             try {

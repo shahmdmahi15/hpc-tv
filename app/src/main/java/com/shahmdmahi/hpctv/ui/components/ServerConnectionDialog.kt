@@ -178,9 +178,10 @@ fun ServerDiscoveryOverlay(
 fun ManualIpDialog(
     initialIp: String,
     onConnect: (ip: String, port: Int, ssl: Boolean) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onTestVoice: (() -> Unit)? = null
 ) {
-    var ipInput by remember { mutableStateOf(initialIp.ifBlank { "192.168.1.100" }) }
+    var ipInput by remember { mutableStateOf(initialIp.ifBlank { "192.168.2.2" }) }
     var portInput by remember { mutableStateOf("3000") }
     var isSsl by remember { mutableStateOf(true) }
 
@@ -246,7 +247,7 @@ fun ManualIpDialog(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                listOf("192.168.1.100", "192.168.0.100", "192.168.1.105", "10.0.2.2").forEach { preset ->
+                listOf("192.168.2.2", "192.168.1.100", "192.168.0.100", "192.168.1.105", "10.0.2.2").forEach { preset ->
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
@@ -334,6 +335,28 @@ fun ManualIpDialog(
                     fontWeight = FontWeight.Black,
                     letterSpacing = 0.5.sp
                 )
+            }
+
+            if (onTestVoice != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(HpcCardSurfaceElevated)
+                        .border(1.dp, HpcEmerald600, RoundedCornerShape(10.dp))
+                        .clickable { onTestVoice() }
+                        .focusable()
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "সাউন্ড ও ভয়েস পরীক্ষা / TEST VOICE & BELL",
+                        color = HpcEmerald400,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }

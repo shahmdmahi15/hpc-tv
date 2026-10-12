@@ -306,13 +306,33 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
                 // 1. Play hospital Ding-Dong bell chime
                 HospitalChimePlayer.playHospitalChime()
 
-                // 2. Play clear spoken voice
+                // 2. Brief natural pause
+                delay(250L)
+
+                // 3. Play clear spoken voice
                 ttsManager.speakBilingualAnnouncement(announcement.voiceBn, announcement.voiceEn)
             }
         }
 
         // Also refresh queue to sync caller's currently-serving slot
         fetchLatestSnapshot()
+    }
+
+    fun testAnnouncementSound() {
+        triggerCallAnnouncement(
+            CallAnnouncement(
+                appointmentId = "test-call",
+                serialNumber = 1,
+                patientName = "পরীক্ষামূলক রোগী (Test Patient)",
+                roomNumber = "101",
+                roomPurpose = "ডাক্তার কনসাল্টেশন",
+                station = "CONSULTATION_ROOM",
+                calledAt = "",
+                sound = "chime",
+                voiceBn = "দয়া করে মনোযোগ দিন। টোকেন নম্বর ১। রোগী পরীক্ষামূলক রোগী, রুম নম্বর ১০১-এ আসুন।",
+                voiceEn = "Attention please. Token 1. Patient Test Patient. Please proceed to Room 101."
+            )
+        )
     }
 
     private fun triggerEmergencyAlert(alert: SystemBroadcastAlert) {

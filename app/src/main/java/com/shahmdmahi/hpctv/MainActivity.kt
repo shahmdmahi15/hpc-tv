@@ -184,11 +184,12 @@ fun WaitingRoomScreen(viewModel: WaitingRoomViewModel) {
         // 6. Manual Server IP Entry Modal
         if (isManualIpOpen) {
             ManualIpDialog(
-                initialIp = currentServer?.ip ?: "192.168.1.100",
+                initialIp = currentServer?.ip ?: "192.168.2.2",
                 onConnect = { ip, port, ssl ->
                     viewModel.connectManually(ip, port, ssl)
                 },
-                onDismiss = { viewModel.closeManualIpDialog() }
+                onDismiss = { viewModel.closeManualIpDialog() },
+                onTestVoice = { viewModel.testAnnouncementSound() }
             )
         }
     }
