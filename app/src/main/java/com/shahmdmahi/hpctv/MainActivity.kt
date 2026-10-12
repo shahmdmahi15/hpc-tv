@@ -2,7 +2,6 @@ package com.shahmdmahi.hpctv
 
 import android.os.Bundle
 import android.view.KeyEvent
-import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,9 +13,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.tv.material3.ExperimentalTvMaterial3Api
 import androidx.tv.material3.Surface
 import com.shahmdmahi.hpctv.ui.components.*
@@ -31,13 +27,14 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. Keep TV screen active indefinitely (prevents ambient sleep/screensaver)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        // 2. Enable edge-to-edge safely
+        // 1. Keep TV screen active indefinitely and fullscreen via WindowManager flags
+        // Never call WindowInsetsController / WindowCompat.getInsetsController on TV as it throws NPE on many TV ROMs
         try {
-            WindowCompat.setDecorFitsSystemWindows(window, false)
-        } catch (_: Throwable) {}
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON or
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+            )
+        } catch (_: Exception) {}
 
         setContent {
             HPCTVTheme {
@@ -50,40 +47,6 @@ class MainActivity : ComponentActivity() {
                     WaitingRoomScreen(viewModel = viewModel)
                 }
             }
-        }
-
-        // 3. Post system bar hiding after decorView is fully created to prevent NullPointerException
-        window.decorView.post {
-            hideSystemBars()
-        }
-    }
-
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) {
-            hideSystemBars()
-        }
-    }
-
-    private fun hideSystemBars() {
-        try {
-            val controller = WindowCompat.getInsetsController(window, window.decorView)
-            controller.systemBarsBehavior =
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-            controller.hide(WindowInsetsCompat.Type.systemBars())
-        } catch (_: Throwable) {
-            // Safe fallback for older Android versions and custom OEM ROMs (Samsung, etc.)
-            try {
-                @Suppress("DEPRECATION")
-                window.decorView.systemUiVisibility = (
-                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        or View.SYSTEM_UI_FLAG_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                )
-            } catch (_: Throwable) {}
         }
     }
 
