@@ -195,9 +195,17 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
         }
 
         viewModelScope.launch {
+            sseManager.queueRefreshTriggerFlow.collect {
+                // Immediate real-time re-fetch when any queue change or check-in occurs
+                fetchLatestSnapshot()
+            }
+        }
+
+        viewModelScope.launch {
             var reconnectingSeconds = 0
-            sseManager.connectionState.collect { connState ->
-                if (connState == WaitingRoomSseManager.ConnectionState.RECONNECTING) {
+            while (isActive) {
+                delay(5000L)
+                if (sseManager.connectionState.value == WaitingRoomSseManager.ConnectionState.RECONNECTING) {
                     reconnectingSeconds += 5
                     if (reconnectingSeconds >= 30) {
                         reconnectingSeconds = 0
@@ -206,6 +214,16 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
                     }
                 } else {
                     reconnectingSeconds = 0
+                }
+            }
+        }
+
+        // Safety fallback periodic polling: self-heals board even under Wi-Fi packet drops
+        viewModelScope.launch {
+            while (isActive) {
+                delay(30_000L)
+                if (_viewState.value is ViewState.Ready) {
+                    fetchLatestSnapshot()
                 }
             }
         }
