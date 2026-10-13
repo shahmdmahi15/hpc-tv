@@ -221,8 +221,8 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
         // Safety fallback periodic polling: self-heals board even under Wi-Fi packet drops
         viewModelScope.launch {
             while (isActive) {
-                delay(30_000L)
-                if (_viewState.value is ViewState.Ready) {
+                delay(10_000L)
+                if (_viewState.value is ViewState.Ready || _currentServer.value != null) {
                     fetchLatestSnapshot()
                 }
             }
@@ -241,10 +241,14 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
                 connectToServer(discovered)
             } else {
                 val saved = discoveryManager.getSavedServer()
-                _viewState.value = ViewState.Offline(
-                    reason = "Could not locate clinic server on local network. Ensure TV and Server share Wi-Fi.",
-                    lastServer = saved
-                )
+                if (saved != null) {
+                    connectToServer(saved)
+                } else {
+                    _viewState.value = ViewState.Offline(
+                        reason = "Could not locate clinic server on local network. Ensure TV and Server share Wi-Fi.",
+                        lastServer = null
+                    )
+                }
             }
         }
     }
@@ -305,7 +309,10 @@ class WaitingRoomViewModel(application: Application) : AndroidViewModel(applicat
     }
 
     fun fetchLatestSnapshot() {
-        val server = _currentServer.value ?: return
+        val server = _currentServer.value ?: discoveryManager.getSavedServer() ?: return
+        if (_currentServer.value == null) {
+            _currentServer.value = server
+        }
         viewModelScope.launch {
             val result = apiService.fetchSnapshot(server.baseUrl)
             if (result.isSuccess) {

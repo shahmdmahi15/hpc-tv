@@ -5,6 +5,7 @@ import com.shahmdmahi.hpctv.data.model.CallAnnouncement
 import com.shahmdmahi.hpctv.data.model.SystemBroadcastAlert
 import com.shahmdmahi.hpctv.data.model.WaitingRoomSnapshot
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -48,7 +49,11 @@ class WaitingRoomSseManager(
     private val _noticeUpdateFlow = MutableSharedFlow<BulletinNoticeItem>(extraBufferCapacity = 10)
     val noticeUpdateFlow: SharedFlow<BulletinNoticeItem> = _noticeUpdateFlow
 
-    private val _queueRefreshTriggerFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val _queueRefreshTriggerFlow = MutableSharedFlow<Unit>(
+        replay = 0,
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
     val queueRefreshTriggerFlow: SharedFlow<Unit> = _queueRefreshTriggerFlow
 
     private val _lastPingTimestamp = MutableStateFlow(0L)
@@ -115,6 +120,7 @@ class WaitingRoomSseManager(
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
+                        _queueRefreshTriggerFlow.tryEmit(Unit)
                     }
 
                     "SYSTEM_BROADCAST_ALERT" -> {
@@ -135,12 +141,17 @@ class WaitingRoomSseManager(
                         }
                     }
 
-                    "APPOINTMENT_UPDATED" -> {
+                    "APPOINTMENT_UPDATED", "QUEUE_UPDATED", "PATIENT_CHECKED_IN", "PATIENT_QUEUED_FOR_THERAPY", "PATIENT_QUEUED_FOR_CONSULTATION", "PATIENT_FORWARDED", "PATIENT_CHECKED_OUT" -> {
                         _queueRefreshTriggerFlow.tryEmit(Unit)
                     }
 
                     "PING" -> {
                         _lastPingTimestamp.value = System.currentTimeMillis()
+                    }
+
+                    else -> {
+                        // Any other event (custom or future events) immediately triggers queue snapshot refresh
+                        _queueRefreshTriggerFlow.tryEmit(Unit)
                     }
                 }
             }
